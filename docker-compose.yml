@@ -1,0 +1,25 @@
+﻿version: '3.3'
+
+services:
+  web:
+    build: .
+    ports:
+      - "80:80"
+      - "443:443"
+    links:
+      - database
+    depends_on:
+      - database
+    environment:
+      # Чтобы работал Swagger на сервере, для фронтендеров
+      ASPNETCORE_ENVIRONMENT: Development
+    restart: always
+  database:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: food_delivery
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    restart: always
