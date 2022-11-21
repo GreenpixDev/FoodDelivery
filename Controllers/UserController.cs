@@ -1,26 +1,55 @@
-using FoodDelivery.Models;
+using FoodDelivery.Models.Dto;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FoodDelivery.Controllers;
 
 [ApiController]
-[Route("user")]
+[Route("api/account")]
 public class UserController : ControllerBase
 {
-    private readonly ILogger<UserController> _logger;
-
-    public UserController(ILogger<UserController> logger)
+    /// <summary>
+    /// Зарегистрировать нового пользователя
+    /// </summary>
+    [HttpPost("register")]
+    public TokenDto Register(UserRegisterDto userRegisterDto)
     {
-        _logger = logger;
+        throw new NotImplementedException();
     }
-
-    [HttpGet("get")]
-    public User Get()
+    
+    /// <summary>
+    /// Войти в систему
+    /// </summary>
+    [HttpPost("login")]
+    public TokenDto Login()
     {
-        _logger.Log(LogLevel.Information, "Test!");
-        return new User
-        {
-            Email = "Test"
-        };
+        throw new NotImplementedException();
+    }
+    
+    /// <summary>
+    /// Выйти из системы
+    /// </summary>
+    [HttpPost("logout"), Authorize]
+    public void Logout()
+    {
+        throw new NotImplementedException();
+    }
+    
+    /// <summary>
+    /// Получить профиль пользователя
+    /// </summary>
+    [HttpGet("profile"), Authorize]
+    public void GetProfile()
+    {
+        throw new NotImplementedException();
+    }
+    
+    /// <summary>
+    /// Изменить профиль пользователя
+    /// </summary>
+    [HttpPut("profile"), Authorize]
+    public void UpdateProfile()
+    {
+        throw new NotImplementedException();
     }
 }
