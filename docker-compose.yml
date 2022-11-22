@@ -4,8 +4,7 @@ services:
   web:
     build: .
     ports:
-      - "80:80"
-      - "443:443"
+      - "10000:80"
     links:
       - database
     depends_on:
@@ -16,8 +15,6 @@ services:
     restart: always
   database:
     image: postgres:latest
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_DB: food_delivery
       POSTGRES_USER: postgres

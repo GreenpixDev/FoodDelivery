@@ -1,0 +1,46 @@
+﻿variables:
+  PROJECT_NAME: hitsfood
+  PROJECT_DIR: /opt/$PROJECT_NAME
+
+stages:
+  - build
+  - test
+  - deploy
+
+build:
+  image: mcr.microsoft.com/dotnet/sdk:6.0
+  stage: build
+  script:
+    - dotnet restore
+    - dotnet build -c Release
+    - dotnet publish -c Release
+  artifacts:
+    paths:
+      - bin/*
+    expire_in: 1 week
+  tags:
+    - docker
+
+test:
+  image: mcr.microsoft.com/dotnet/sdk:6.0
+  stage: test
+  script:
+    - dotnet test --logger:"junit;LogFilePath=UnitTestResult.xml"
+  artifacts:
+    paths:
+      - UnitTestResult.xml
+    reports:
+      junit: UnitTestResult.xml
+  tags:
+    - docker
+
+deploy:
+  stage: deploy
+  script:
+    - sudo cp -r . $PROJECT_DIR
+    - cd $PROJECT_DIR
+    - sudo docker compose build
+    - sudo docker compose -p $PROJECT_NAME up -d
+  environment: staging
+  tags:
+    - deploy
