@@ -1,4 +1,4 @@
-﻿variables:
+variables:
   PROJECT_NAME: hitsfood
   PROJECT_DIR: /opt/$PROJECT_NAME
 
