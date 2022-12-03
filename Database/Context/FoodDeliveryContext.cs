@@ -15,4 +15,11 @@ public class FoodDeliveryContext : DbContext
     {
         Database.EnsureCreated();
     }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<BasketDish>()
+            .HasIndex(x => new {x.UserId, x.DishId, x.OrderId})
+            .IsUnique();
+    }
 }
