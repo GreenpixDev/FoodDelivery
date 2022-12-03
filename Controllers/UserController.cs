@@ -1,4 +1,5 @@
 using FoodDelivery.Models.Dto;
+using FoodDelivery.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,14 +9,22 @@ namespace FoodDelivery.Controllers;
 [Route("api/account")]
 public class UserController : ControllerBase
 {
+
+    private readonly IUserService _userService;
+
+    public UserController(IUserService userService)
+    {
+        _userService = userService;
+    }
+
     /// <summary>
     /// Зарегистрировать нового пользователя
     /// </summary>
     [HttpPost("register")]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public TokenDto Register(UserRegisterDto userRegisterDto)
+    public Task<TokenDto> Register(UserRegisterDto userRegisterDto)
     {
-        throw new NotImplementedException();
+        return _userService.Register(userRegisterDto);
     }
     
     /// <summary>
@@ -23,9 +32,9 @@ public class UserController : ControllerBase
     /// </summary>
     [HttpPost("login")]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public TokenDto Login(LoginDto loginDto)
+    public Task<TokenDto> Login(LoginDto loginDto)
     {
-        throw new NotImplementedException();
+        return _userService.Login(loginDto);
     }
     
     /// <summary>
@@ -34,7 +43,7 @@ public class UserController : ControllerBase
     [HttpPost("logout"), Authorize]
     public void Logout()
     {
-        throw new NotImplementedException();
+        _userService.Logout();
     }
     
     /// <summary>

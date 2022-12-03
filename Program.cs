@@ -2,12 +2,38 @@ using System.Net.Mime;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using FoodDelivery;
 using FoodDelivery.Database.Context;
+using FoodDelivery.Models.Entity;
+using FoodDelivery.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = JwtOptions.Issuer,
+        ValidateAudience = true,
+        ValidAudience = JwtOptions.Audience,
+        ValidateLifetime = true,
+        IssuerSigningKey = JwtOptions.GetSymmetricSecurityKey(),
+        ValidateIssuerSigningKey = true,
+        LifetimeValidator = (before, expires, token, parameters) => true
+    };
+});
+builder.Services.AddAuthorization();
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -45,13 +71,27 @@ builder.Services.AddSwaggerGen(options =>
 var connection = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<FoodDeliveryContext>(options => options.UseNpgsql(connection));
 
+// Настройка правил регистрации
+builder.Services.AddIdentity<User, IdentityRole>()
+    .AddEntityFrameworkStores<FoodDeliveryContext>()
+    .AddDefaultTokenProviders();
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Password.RequireDigit = false;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequiredLength = 6;
+    options.Password.RequiredUniqueChars = 0;
+});
+
 // Объявление зависимостей
-// TODO
+builder.Services.AddScoped<IUserService, UserService>();
 
 // Приложение
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Для разработки
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -60,6 +100,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

@@ -1,17 +1,18 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace FoodDelivery.Models.Entity;
+﻿namespace FoodDelivery.Models.Entity;
 
 public class BasketDish
 {
-    [ForeignKey("User")]
     public Guid UserId { get; set; }
     
-    [ForeignKey("Dish")]
     public Guid DishId { get; set; }
     
-    [ForeignKey("Order")]
     public Guid OrderId { get; set; }
+    
+    public User User { get; set; }
+    
+    public Dish Dish { get; set; }
+    
+    public Order Order { get; set; }
 
     public int Count { get; set; }
 }
