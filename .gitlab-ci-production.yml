@@ -59,6 +59,5 @@ deploy:
     - sudo docker compose -p $PROJECT_NAME up -d
     - echo "Application launched!"
   environment: staging
-  when: manual
   tags:
     - deploy
