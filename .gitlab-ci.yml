@@ -5,6 +5,5 @@ stages:
   - deploy
 
 include:
-  - '.gitlab-ci-template.yml'
   - '.gitlab-ci-production.yml'
   - '.gitlab-ci-pages.yml'
