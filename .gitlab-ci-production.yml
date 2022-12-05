@@ -2,6 +2,9 @@ variables:
   PROJECT_NAME: hitsfood
   PROJECT_DIR: /opt/$PROJECT_NAME
 
+include:
+  - '.gitlab-ci-template.yml'
+
 lint:
   extends:
     - .build-rules
