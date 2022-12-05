@@ -37,8 +37,14 @@ test:
   stage: test
   script:
     - echo "Running test..."
-    - dotnet test"
+    - dotnet test --logger:"junit;LogFilePath=UnitTestResult.xml"
     - echo "Test completed!"
+  artifacts:
+    paths:
+      - UnitTestResult.xml
+    reports:
+      junit: UnitTestResult.xml
+
 
 deploy:
   extends: .deploy-rules
