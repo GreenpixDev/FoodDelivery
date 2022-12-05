@@ -9,7 +9,7 @@ stages:
   - deploy
 
 lint:
-  image: docker pull beevelop/sonarlint
+  image: beevelop/sonarlint:latest
   stage: lint
   script:
     - sonarlint --html-report report/sonar.html
@@ -33,6 +33,7 @@ build:
     expire_in: 1 week
   tags:
     - docker
+  needs: []
 
 test:
   image: mcr.microsoft.com/dotnet/sdk:6.0
