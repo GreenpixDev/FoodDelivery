@@ -3,6 +3,7 @@ variables:
   PROJECT_DIR: /opt/$PROJECT_NAME
 
 lint:
+  extends: .build-rules
   image: beevelop/sonarlint:latest
   stage: lint
   script:
@@ -13,7 +14,6 @@ lint:
     paths:
       - report/sonar.html
     expire_in: 1 week
-    rules: !reference [.build-rules, rules]
   tags:
     - docker
 
@@ -30,7 +30,6 @@ build:
     paths:
       - bin/*
     expire_in: 1 week
-  rules: !reference [.build-rules, rules]
   needs: []
 
 test:
@@ -40,9 +39,9 @@ test:
     - echo "Running test..."
     - dotnet test"
     - echo "Test completed!"
-  rules: !reference [.build-rules, rules]
 
 deploy:
+  extends: .deploy-rules
   stage: deploy
   script:
     - echo "Copy project to $PROJECT_DIR"
@@ -55,6 +54,5 @@ deploy:
     - echo "Application launched!"
   environment: staging
   when: manual
-  rules: !reference [.deploy-rules, rules]
   tags:
     - deploy
