@@ -56,5 +56,6 @@ deploy:
     - sudo docker compose build
     - sudo docker compose -p $PROJECT_NAME up -d
   environment: staging
+  when: manual
   tags:
     - deploy
