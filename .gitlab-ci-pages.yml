@@ -12,3 +12,5 @@ pages:
       - public
   environment: staging
   needs: []
+  tags:
+    - docker
