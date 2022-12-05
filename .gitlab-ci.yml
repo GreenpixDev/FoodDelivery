@@ -3,9 +3,22 @@ variables:
   PROJECT_DIR: /opt/$PROJECT_NAME
 
 stages:
+  - lint
   - build
   - test
   - deploy
+
+lint:
+  image: docker pull beevelop/sonarlint
+  stage: lint
+  script:
+    - sonarlint --html-report report/sonar.html
+  artifacts:
+    paths:
+      - report/sonar.html
+    expire_in: 1 week
+  tags:
+    - docker
 
 build:
   image: mcr.microsoft.com/dotnet/sdk:6.0
