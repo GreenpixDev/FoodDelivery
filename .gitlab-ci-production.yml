@@ -1,0 +1,54 @@
+variables:
+  PROJECT_NAME: hitsfood
+  PROJECT_DIR: /opt/$PROJECT_NAME
+
+lint:
+  extends:
+    - .build-rules
+  image: beevelop/sonarlint:latest
+  stage: lint
+  script:
+    - sonarlint --html-report report/sonar.html
+  artifacts:
+    paths:
+      - report/sonar.html
+    expire_in: 1 week
+  tags:
+    - docker
+
+build:
+  extends: 
+    - .dotnet
+    - .build-rules
+  stage: build
+  script:
+    - dotnet restore
+    - dotnet build -c Release
+    - dotnet publish -c Release
+  artifacts:
+    paths:
+      - bin/*
+    expire_in: 1 week
+  needs: []
+
+test:
+  extends:
+    - .dotnet
+    - .build-rules
+  stage: test
+  script:
+    - dotnet test"
+
+deploy:
+  stage: deploy
+  script:
+    - sudo cp -r . $PROJECT_DIR
+    - cd $PROJECT_DIR
+    - sudo docker compose build
+    - sudo docker compose -p $PROJECT_NAME up -d
+  rules:
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
+  environment: staging
+  when: manual
+  tags:
+    - deploy

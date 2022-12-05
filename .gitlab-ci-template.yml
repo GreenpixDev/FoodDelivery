@@ -1,0 +1,10 @@
+﻿.dotnet:
+  image: mcr.microsoft.com/dotnet/sdk:6.0
+  tags:
+    - docker
+      
+.build-rules:
+  rules:
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^feature/
+      when: manual
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == $CI_DEFAULT_BRANCH
