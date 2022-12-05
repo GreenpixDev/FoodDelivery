@@ -5,6 +5,6 @@ stages:
   - deploy
 
 include:
-  - local: '.gitlab-ci-template.yml'
-  - local: '.gitlab-ci-production.yml'
-  - local: '.gitlab-ci-pages.yml'
+  - '.gitlab-ci-template.yml'
+  - '.gitlab-ci-production.yml'
+  - '.gitlab-ci-pages.yml'
