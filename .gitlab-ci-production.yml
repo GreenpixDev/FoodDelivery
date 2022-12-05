@@ -2,12 +2,9 @@ variables:
   PROJECT_NAME: hitsfood
   PROJECT_DIR: /opt/$PROJECT_NAME
 
-include:
-  - '.gitlab-ci-template.yml'
-
 lint:
   extends:
-    - .build-rules
+    - build-rules
   image: beevelop/sonarlint:latest
   stage: lint
   script:
@@ -23,8 +20,8 @@ lint:
 
 build:
   extends: 
-    - .dotnet
-    - .build-rules
+    - dotnet
+    - build-rules
   stage: build
   script:
     - echo "Running build..."
@@ -40,8 +37,8 @@ build:
 
 test:
   extends:
-    - .dotnet
-    - .build-rules
+    - dotnet
+    - build-rules
   stage: test
   script:
     - echo "Running test..."
@@ -50,7 +47,7 @@ test:
 
 deploy:
   extends:
-    - .deploy-rules
+    - deploy-rules
   stage: deploy
   script:
     - echo "Copy project to $PROJECT_DIR"
