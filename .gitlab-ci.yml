@@ -9,14 +9,10 @@ stages:
   - deploy
 
 lint:
-  image: beevelop/sonarlint:latest
+  image: sonarsource/sonar-scanner-cli:latest
   stage: lint
   script:
-    - sonarlint --html-report report/sonar.html
-  artifacts:
-    paths:
-      - report/sonar.html
-    expire_in: 1 week
+    - sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=.
   tags:
     - docker
 
