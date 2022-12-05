@@ -1,4 +1,5 @@
-﻿using FoodDelivery.Database.Context;
+﻿using System.IdentityModel.Tokens.Jwt;
+using FoodDelivery.Database.Context;
 using FoodDelivery.Models.Dto;
 using FoodDelivery.Models.Entity;
 using Microsoft.AspNetCore.Identity;
@@ -11,15 +12,18 @@ public class UserService : IUserService
     private readonly FoodDeliveryContext _context;
     private readonly UserManager<User> _userManager;
     private readonly SignInManager<User> _signInManager;
+    private readonly IJwtService _jwtService;
 
     public UserService(
         FoodDeliveryContext context, 
         UserManager<User> userManager, 
-        SignInManager<User> signInManager)
+        SignInManager<User> signInManager,
+        IJwtService jwtService)
     {
         _context = context;
         _userManager = userManager;
         _signInManager = signInManager;
+        _jwtService = jwtService;
     }
 
     public async Task<TokenDto> Register(UserRegisterDto userRegisterDto)
@@ -37,7 +41,7 @@ public class UserService : IUserService
         var result = await _userManager.CreateAsync(user, userRegisterDto.Password);
         return new TokenDto
         {
-            Token = result.Succeeded.ToString() // TODO сделать нормальную генерацию токена
+            Token = new JwtSecurityTokenHandler().WriteToken(_jwtService.GetToken())
         };
     }
 
@@ -46,7 +50,7 @@ public class UserService : IUserService
         var result = await _signInManager.PasswordSignInAsync(loginDto.Email, loginDto.Password, true, false);
         return new TokenDto
         {
-            Token = result.Succeeded.ToString() // TODO сделать нормальную генерацию токена
+            Token = new JwtSecurityTokenHandler().WriteToken(_jwtService.GetToken())
         };
     }
 

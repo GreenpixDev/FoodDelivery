@@ -87,6 +87,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 
 // Объявление зависимостей
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
 
 // Приложение
 var app = builder.Build();

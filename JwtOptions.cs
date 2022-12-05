@@ -5,10 +5,10 @@ namespace FoodDelivery;
 
 public class JwtOptions
 {
-    public const string Issuer = "MyAuthServer";
-    public const string Audience = "MyAuthClient";
+    public const string Issuer = "Delivery.Api";
+    public const string Audience = "Delivery.Api";
 
-    private const string Key = "mysupersecret_secretkey!123";
+    private const string Key = "maz6*TktI0J*6fmueLXwKUtsKau%Kyu3";
     
     public static SymmetricSecurityKey GetSymmetricSecurityKey()
     {
