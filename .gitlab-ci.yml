@@ -7,3 +7,4 @@ stages:
 include:
   - local: '.gitlab-ci-template.yml'
   - local: '.gitlab-ci-production.yml'
+  - local: '.gitlab-ci-pages.yml'

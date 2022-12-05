@@ -12,3 +12,4 @@ pages:
     paths:
       - public
   environment: staging
+  needs: []
