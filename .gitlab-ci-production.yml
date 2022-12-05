@@ -8,7 +8,9 @@ lint:
   image: beevelop/sonarlint:latest
   stage: lint
   script:
+    - echo "Running linter..."
     - sonarlint --html-report report/sonar.html
+    - echo "Linter completed!"
   artifacts:
     paths:
       - report/sonar.html
@@ -22,9 +24,11 @@ build:
     - .build-rules
   stage: build
   script:
+    - echo "Running build..."
     - dotnet restore
     - dotnet build -c Release
     - dotnet publish -c Release
+    - echo "Build completed!"
   artifacts:
     paths:
       - bin/*
@@ -37,17 +41,23 @@ test:
     - .build-rules
   stage: test
   script:
+    - echo "Running test..."
     - dotnet test"
+    - echo "Test completed!"
 
 deploy:
+  extends:
+    - .deploy-rules
   stage: deploy
   script:
+    - echo "Copy project to $PROJECT_DIR"
     - sudo cp -r . $PROJECT_DIR
     - cd $PROJECT_DIR
+    - echo "Building docker-compose for deploy..."
     - sudo docker compose build
+    - echo "Running docker-compose application..."
     - sudo docker compose -p $PROJECT_NAME up -d
-  rules:
-    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
+    - echo "Application launched!"
   environment: staging
   when: manual
   tags:

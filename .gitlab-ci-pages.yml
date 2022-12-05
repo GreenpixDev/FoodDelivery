@@ -1,0 +1,14 @@
+pages:
+  extends:
+    - .deploy-rules
+  stage: deploy
+  script:
+    - echo "Preparing gitlab pages..."
+    - mkdir .public
+    - cp -r * .public
+    - mv .public public
+    - echo "Gitlab pages prepared!"
+  artifacts:
+    paths:
+      - public
+  environment: staging
