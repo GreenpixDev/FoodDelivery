@@ -10,7 +10,6 @@ pages:
   artifacts:
     paths:
       - public
-  environment: staging
   needs: []
   tags:
     - docker
