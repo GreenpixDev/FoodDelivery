@@ -85,6 +85,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 
 // Объявление зависимостей
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IDishService, DishService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IPasswordEncoder, BCryptPasswordEncoder>();
 
