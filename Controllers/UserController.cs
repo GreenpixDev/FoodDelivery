@@ -1,3 +1,4 @@
+using FoodDelivery.Exception;
 using FoodDelivery.Models.Dto;
 using FoodDelivery.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -22,9 +23,22 @@ public class UserController : ControllerBase
     /// </summary>
     [HttpPost("register")]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public Task<TokenDto> Register(UserRegisterDto userRegisterDto)
+    public IActionResult Register(UserRegisterDto userRegisterDto)
     {
-        return _userService.Register(userRegisterDto);
+        try
+        {
+            return new JsonResult(_userService.Register(userRegisterDto));
+        }
+        catch (DuplicateUserException)
+        {
+            return Conflict(new
+            {
+                DuplicateUserName = new []
+                {
+                    $"Username '{userRegisterDto.Email}' is already taken"
+                }
+            });
+        }
     }
     
     /// <summary>
@@ -32,9 +46,16 @@ public class UserController : ControllerBase
     /// </summary>
     [HttpPost("login")]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public Task<TokenDto> Login(LoginDto loginDto)
+    public IActionResult Login(LoginDto loginDto)
     {
-        return _userService.Login(loginDto);
+        try
+        {
+            return new JsonResult(_userService.Login(loginDto));
+        }
+        catch (AuthenticationUserException)
+        {
+            return Unauthorized();
+        }
     }
     
     /// <summary>

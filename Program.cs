@@ -2,12 +2,11 @@ using System.Net.Mime;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using FoodDelivery;
+using FoodDelivery.Configuration;
 using FoodDelivery.Database.Context;
-using FoodDelivery.Models.Entity;
 using FoodDelivery.Services;
+using FoodDelivery.Services.Password;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -24,13 +23,12 @@ builder.Services.AddAuthentication(options =>
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
-        ValidIssuer = JwtOptions.Issuer,
+        ValidIssuer = JwtConfiguration.Issuer,
         ValidateAudience = true,
-        ValidAudience = JwtOptions.Audience,
+        ValidAudience = JwtConfiguration.Audience,
         ValidateLifetime = true,
-        IssuerSigningKey = JwtOptions.GetSymmetricSecurityKey(),
-        ValidateIssuerSigningKey = true,
-        LifetimeValidator = (before, expires, token, parameters) => true
+        IssuerSigningKey = JwtConfiguration.GetSymmetricSecurityKey(),
+        ValidateIssuerSigningKey = true
     };
 });
 builder.Services.AddAuthorization();
@@ -72,7 +70,7 @@ var connection = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<FoodDeliveryContext>(options => options.UseNpgsql(connection));
 
 // Настройка правил регистрации
-builder.Services.AddIdentity<User, IdentityRole>()
+/*builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<FoodDeliveryContext>()
     .AddDefaultTokenProviders();
 builder.Services.Configure<IdentityOptions>(options =>
@@ -83,11 +81,12 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Password.RequireUppercase = false;
     options.Password.RequiredLength = 6;
     options.Password.RequiredUniqueChars = 0;
-});
+});*/
 
 // Объявление зависимостей
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IPasswordEncoder, BCryptPasswordEncoder>();
 
 // Приложение
 var app = builder.Build();

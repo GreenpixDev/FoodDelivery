@@ -1,25 +1,32 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using FoodDelivery.Configuration;
+using FoodDelivery.Models.Entity;
 using Microsoft.IdentityModel.Tokens;
 
 namespace FoodDelivery.Services;
 
 public class JwtService : IJwtService
 {
-    public JwtSecurityToken GetToken()
+    private const string NameIdClaimType = "nameid";
+    private const string NameClaimType = "name";
+    private const string EmailClaimType = "email";
+    
+    public JwtSecurityToken GetToken(User user)
     {
         return new JwtSecurityToken(
-            issuer: JwtOptions.Issuer,
-            audience: JwtOptions.Audience,
-            expires: DateTime.Now.AddHours(3),
+            issuer: JwtConfiguration.Issuer,
+            audience: JwtConfiguration.Audience,
+            notBefore: DateTime.UtcNow,
+            expires: DateTime.UtcNow.AddMinutes(JwtConfiguration.Lifetime),
             claims: new []
             {
-                new Claim("nameid", "kek"),
-                new Claim("name", "ani"),
-                new Claim("email", "ani")
+                new Claim(NameIdClaimType, user.Id.ToString()),
+                new Claim(NameClaimType, user.Email),
+                new Claim(EmailClaimType, user.Email)
             },
             signingCredentials: new SigningCredentials(
-                JwtOptions.GetSymmetricSecurityKey(), 
+                JwtConfiguration.GetSymmetricSecurityKey(), 
                 SecurityAlgorithms.HmacSha256
                 )
             );
