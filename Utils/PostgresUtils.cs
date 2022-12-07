@@ -11,6 +11,6 @@ public class PostgresUtils
         {
             return false;
         }
-        return postgresException.ErrorCode.ToString() == errorCode;
+        return postgresException.SqlState == errorCode;
     }
 }

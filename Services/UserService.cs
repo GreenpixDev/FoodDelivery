@@ -51,6 +51,8 @@ public class UserService : IUserService
             {
                 throw new DuplicateUserException();
             }
+
+            throw;
         }
         
         return new TokenDto
