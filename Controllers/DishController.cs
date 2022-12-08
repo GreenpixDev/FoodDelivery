@@ -35,7 +35,7 @@ public class DishController : ControllerBase
     /// <summary>
     /// Получить информацию о конкретном блюде
     /// </summary>
-    [HttpGet("{id}")]
+    [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public ActionResult<DishDto> GetDishById(Guid id)
     {
@@ -45,7 +45,7 @@ public class DishController : ControllerBase
     /// <summary>
     /// Проверить, может ли пользователь установить рейтинг блюду
     /// </summary>
-    [HttpGet("{id}/rating/check"), Authorize]
+    [HttpGet("{id:guid}/rating/check"), Authorize]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public ActionResult<bool> CheckCanSetRating(Guid id)
     {
@@ -55,7 +55,7 @@ public class DishController : ControllerBase
     /// <summary>
     /// Установить рейтинг для блюда
     /// </summary>
-    [HttpPost("{id}/rating"), Authorize]
+    [HttpPost("{id:guid}/rating"), Authorize]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public IActionResult SetRating(Guid id, int ratingScore)

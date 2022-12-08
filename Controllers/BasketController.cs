@@ -28,7 +28,7 @@ public class BasketController : ControllerBase
     /// <summary>
     /// Добавить блюдо в корзину
     /// </summary>
-    [HttpPost("dish/{dishId}"), Authorize]
+    [HttpPost("dish/{dishId:guid}"), Authorize]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public IActionResult AddDish(Guid dishId)
     {
@@ -39,7 +39,7 @@ public class BasketController : ControllerBase
     /// <summary>
     /// Уменьшает количество блюда в корзине (если increase = true), или удаляет блюдо из корзины полностью (если increase = false)
     /// </summary>
-    [HttpDelete("dish/{dishId}"), Authorize]
+    [HttpDelete("dish/{dishId:guid}"), Authorize]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public IActionResult RemoveDish(Guid dishId, bool increase = false)
     {
