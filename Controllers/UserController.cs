@@ -22,12 +22,13 @@ public class UserController : ControllerBase
     /// Зарегистрировать нового пользователя
     /// </summary>
     [HttpPost("register")]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public IActionResult Register(UserRegisterDto userRegisterDto)
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status409Conflict)]
+    public ActionResult<TokenDto> Register(UserRegisterDto userRegisterDto)
     {
         try
         {
-            return new JsonResult(_userService.Register(userRegisterDto));
+            return _userService.Register(userRegisterDto);
         }
         catch (DuplicateUserException)
         {
@@ -45,12 +46,13 @@ public class UserController : ControllerBase
     /// Войти в систему
     /// </summary>
     [HttpPost("login")]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public IActionResult Login(LoginDto loginDto)
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    public ActionResult<TokenDto> Login(LoginDto loginDto)
     {
         try
         {
-            return new JsonResult(_userService.Login(loginDto));
+            return _userService.Login(loginDto);
         }
         catch (AuthenticationUserException)
         {
@@ -62,26 +64,29 @@ public class UserController : ControllerBase
     /// Выйти из системы
     /// </summary>
     [HttpPost("logout"), Authorize]
-    public void Logout()
+    public IActionResult Logout()
     {
-        _userService.Logout();
+        _userService.Logout(User);
+        return Ok();
     }
     
     /// <summary>
     /// Получить профиль пользователя
     /// </summary>
     [HttpGet("profile"), Authorize]
-    public UserDto GetProfile()
+    public ActionResult<UserDto> GetProfile()
     {
-        throw new NotImplementedException();
+        return _userService.GetProfile(User);
     }
     
     /// <summary>
     /// Изменить профиль пользователя
     /// </summary>
     [HttpPut("profile"), Authorize]
-    public void UpdateProfile(UserEditDto userEditDto)
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+    public IActionResult UpdateProfile(UserEditDto userEditDto)
     {
-        throw new NotImplementedException();
+        _userService.UpdateProfile(User, userEditDto);
+        return Ok();
     }
 }

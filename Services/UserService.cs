@@ -1,4 +1,5 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using FoodDelivery.Database.Context;
 using FoodDelivery.Exception;
 using FoodDelivery.Models.Dto;
@@ -80,7 +81,17 @@ public class UserService : IUserService
         };
     }
 
-    public void Logout()
+    public void Logout(ClaimsPrincipal principal)
+    {
+        throw new NotImplementedException();
+    }
+
+    public UserDto GetProfile(ClaimsPrincipal principal)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void UpdateProfile(ClaimsPrincipal principal, UserEditDto userEditDto)
     {
         throw new NotImplementedException();
     }
