@@ -1,6 +1,5 @@
 using System.Net.Mime;
 using System.Reflection;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using FoodDelivery.Configuration;
 using FoodDelivery.Database.Context;
@@ -35,13 +34,12 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
-    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 builder.Services.AddMvc(options =>
 {
     options.Filters.Add(new ProducesAttribute(MediaTypeNames.Application.Json));
     options.Filters.Add(new ProducesResponseTypeAttribute(StatusCodes.Status200OK));
-    options.Filters.Add(new ProducesResponseTypeAttribute(typeof(void), StatusCodes.Status400BadRequest));
     options.Filters.Add(new ProducesResponseTypeAttribute(typeof(void), StatusCodes.Status500InternalServerError));
 });
 builder.Services.AddEndpointsApiExplorer();
