@@ -5,7 +5,7 @@ namespace FoodDelivery.Services;
 
 public interface IBasketService
 {
-    DishBasketDto GetBasket(ClaimsPrincipal principal);
+    List<DishBasketDto> GetBasket(ClaimsPrincipal principal);
 
     void AddDishToBasket(ClaimsPrincipal principal, Guid dishId);
     
