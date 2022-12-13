@@ -88,11 +88,38 @@ public class UserService : IUserService
 
     public UserDto GetProfile(ClaimsPrincipal principal)
     {
-        throw new NotImplementedException();
+        User result = (
+            from user in _context.Users
+            where user.Email == ClaimsUtils.getEmail(principal)
+            select user
+        ).Single();
+
+        return new UserDto
+        {
+            Id = result.Id,
+            FullName = result.FullName,
+            Email = result.Email,
+            Address = result.Address,
+            BirthDate = result.BirthDate,
+            Gender = result.Gender,
+            PhoneNumber = result.PhoneNumber
+        };
     }
 
     public void UpdateProfile(ClaimsPrincipal principal, UserEditDto userEditDto)
     {
-        throw new NotImplementedException();
+        User result = (
+            from user in _context.Users
+            where user.Email == ClaimsUtils.getEmail(principal)
+            select user
+        ).Single();
+
+        result.FullName = userEditDto.FullName;
+        result.BirthDate = userEditDto.BirthDate;
+        result.Gender = userEditDto.Gender;
+        result.Address = userEditDto.Address;
+        result.PhoneNumber = userEditDto.PhoneNumber;
+
+        _context.SaveChanges();
     }
 }
