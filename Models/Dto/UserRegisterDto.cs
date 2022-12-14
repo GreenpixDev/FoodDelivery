@@ -10,6 +10,8 @@ public class UserRegisterDto
     
     [Required]
     [MinLength(6)]
+    
+    [RegularExpression(@".*\d.*", ErrorMessage = "Password requires at least one digit")]
     public string Password { get; set; }
     
     [Required]
