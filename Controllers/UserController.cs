@@ -3,6 +3,7 @@ using FoodDelivery.Models.Dto;
 using FoodDelivery.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 
 namespace FoodDelivery.Controllers;
 
@@ -66,7 +67,10 @@ public class UserController : ControllerBase
     [HttpPost("logout"), Authorize]
     public IActionResult Logout()
     {
-        _userService.Logout(User);
+        _userService.Logout(User, Request.Headers[HeaderNames.Authorization]
+            .ToString()
+            .Replace("Bearer ", "")
+        );
         return Ok();
     }
     

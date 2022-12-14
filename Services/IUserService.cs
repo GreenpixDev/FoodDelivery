@@ -9,7 +9,7 @@ public interface IUserService
     
     TokenDto Login(LoginDto loginDto);
     
-    void Logout(ClaimsPrincipal principal);
+    void Logout(ClaimsPrincipal principal, string token);
 
     UserDto GetProfile(ClaimsPrincipal principal);
 

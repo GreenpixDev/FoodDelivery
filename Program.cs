@@ -1,11 +1,14 @@
 using System.Net.Mime;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using FoodDelivery;
 using FoodDelivery.Configuration;
 using FoodDelivery.Database.Context;
 using FoodDelivery.Services;
 using FoodDelivery.Services.Password;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -30,7 +33,13 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true
     };
 });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.DefaultPolicy = new AuthorizationPolicyBuilder()
+        .AddRequirements(new DenyAnonymousAuthorizationRequirement())
+        .AddRequirements(new BlacklistTokenRequirement())
+        .Build();
+});
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -64,10 +73,15 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // Добавление базы данных
-var connection = builder.Configuration.GetConnectionString("DefaultConnection");
+var connection = builder.Configuration.GetConnectionString("Postgres");
 builder.Services.AddDbContext<FoodDeliveryContext>(options => options.UseNpgsql(connection));
 
-builder.Services.AddDistributedMemoryCache();
+// Редиска
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+    options.InstanceName = "token";
+});
 
 // Настройка правил регистрации
 /*builder.Services.AddIdentity<User, IdentityRole>()
@@ -90,6 +104,9 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IBasketService, BasketService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IPasswordEncoder, BCryptPasswordEncoder>();
+
+builder.Services.AddScoped<IAuthorizationHandler, BlacklistTokenHandler>();
+builder.Services.AddHttpContextAccessor();
 
 // Приложение
 var app = builder.Build();

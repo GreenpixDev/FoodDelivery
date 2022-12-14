@@ -1,11 +1,13 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using FoodDelivery.Configuration;
 using FoodDelivery.Database.Context;
 using FoodDelivery.Exception;
 using FoodDelivery.Models.Dto;
 using FoodDelivery.Models.Entity;
 using FoodDelivery.Services.Password;
 using FoodDelivery.Utils;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace FoodDelivery.Services;
 
@@ -15,15 +17,18 @@ public class UserService : IUserService
     private readonly FoodDeliveryContext _context;
     private readonly IPasswordEncoder _passwordEncoder;
     private readonly IJwtService _jwtService;
+    private readonly IDistributedCache _cache;
 
     public UserService(
         FoodDeliveryContext context,
         IPasswordEncoder passwordEncoder,
-        IJwtService jwtService)
+        IJwtService jwtService,
+        IDistributedCache cache)
     {
         _context = context;
         _passwordEncoder = passwordEncoder;
         _jwtService = jwtService;
+        _cache = cache;
     }
 
     public TokenDto Register(UserRegisterDto userRegisterDto)
@@ -72,9 +77,13 @@ public class UserService : IUserService
         };
     }
 
-    public void Logout(ClaimsPrincipal principal)
+    public void Logout(ClaimsPrincipal principal, string token)
     {
-        throw new NotImplementedException();
+        var options = new DistributedCacheEntryOptions
+        {
+            AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(JwtConfiguration.Lifetime)
+        };
+        _cache.SetString(token, "1", options);
     }
 
     public UserDto GetProfile(ClaimsPrincipal principal)
