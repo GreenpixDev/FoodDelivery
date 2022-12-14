@@ -35,6 +35,10 @@ public class OrderController : ControllerBase
                 Message = $"Order with id={id} don't in database"
             });
         }
+        catch (ForbiddenException)
+        {
+            return Forbid();
+        }
     }
     
     /// <summary>
@@ -101,6 +105,10 @@ public class OrderController : ControllerBase
             {
                 Message = $"Can't update status for order with id={id}"
             });
+        }
+        catch (ForbiddenException)
+        {
+            return Forbid();
         }
     }
 }

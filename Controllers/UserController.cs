@@ -27,6 +27,13 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status409Conflict)]
     public ActionResult<TokenDto> Register(UserRegisterDto userRegisterDto)
     {
+        if ((userRegisterDto.BirthDate - DateTime.Now).TotalMilliseconds > 0)
+        {
+            return BadRequest(new
+            {
+                Message = "Birth date can't be later than today"
+            });
+        }
         try
         {
             return _userService.Register(userRegisterDto);
@@ -90,6 +97,13 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     public IActionResult UpdateProfile(UserEditDto userEditDto)
     {
+        if ((userEditDto.BirthDate - DateTime.Now).TotalMilliseconds > 0)
+        {
+            return BadRequest(new
+            {
+                Message = "Birth date can't be later than today"
+            });
+        }
         _userService.UpdateProfile(User, userEditDto);
         return Ok();
     }

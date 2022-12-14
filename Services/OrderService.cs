@@ -20,19 +20,21 @@ public class OrderService : IOrderService
 
     public OrderDto GetOrderInfo(ClaimsPrincipal principal, Guid orderId)
     {
-        List<OrderDish> orderDishes = _context.OrderDishes
-            .Where(dish => dish.UserId == ClaimsUtils.getId(principal) && dish.OrderId == orderId)
-            .Select(dish => dish)
-            .Include(nameof(Order))
-            .Include(nameof(Dish))
-            .ToList();
+        Order? order = _context.Orders
+            .Where(order => order.Id == orderId)
+            .Select(order => order)
+            .Include(order => order.OrderDishes)
+            .ThenInclude(dish => dish.Dish)
+            .SingleOrDefault();
 
-        if (!orderDishes.Any())
+        if (order == null)
         {
             throw new OrderNotFoundException();
         }
-
-        Order order = orderDishes.First().Order;
+        if (order.UserId != ClaimsUtils.getId(principal))
+        {
+            throw new ForbiddenException();
+        }
 
         return new OrderDto
         {
@@ -42,7 +44,7 @@ public class OrderService : IOrderService
             Address = order.Address,
             Price = order.Price,
             Status = order.Status,
-            Dishes = (from dish in orderDishes
+            Dishes = (from dish in order.OrderDishes
                 select new DishBasketDto
                 {
                     Id = dish.Dish.Id,
@@ -57,10 +59,9 @@ public class OrderService : IOrderService
 
     public List<OrderInfoDto> GetOrderList(ClaimsPrincipal principal)
     {
-        List<Order> orders = _context.OrderDishes
-            .Where(dish => dish.UserId == ClaimsUtils.getId(principal))
-            .Select(dish => dish.Order)
-            .Distinct()
+        List<Order> orders = _context.Orders
+            .Where(order => order.UserId == ClaimsUtils.getId(principal))
+            .Select(order => order)
             .ToList();
 
         return (from order in orders
@@ -88,9 +89,11 @@ public class OrderService : IOrderService
         }
         
         double price = basketDishes.Sum(basketDish => basketDish.Count * basketDish.Dish.Price);
+        Guid orderId = Guid.NewGuid();
         Order order = new Order
         {
-            Id = Guid.NewGuid(),
+            Id = orderId,
+            UserId = ClaimsUtils.getId(principal),
             OrderTime = DateTime.UtcNow,
             DeliveryTime = orderCreateDto.DeliveryTime,
             Address = orderCreateDto.Address,
@@ -98,32 +101,33 @@ public class OrderService : IOrderService
             Status = OrderStatus.InProcess
         };
         _context.Orders.Add(order);
-        _context.BasketDishes.RemoveRange(basketDishes);
         _context.OrderDishes.AddRange(
             from basketDish in basketDishes
             select new OrderDish
             {
                 DishId = basketDish.DishId,
-                UserId = basketDish.UserId,
-                OrderId = order.Id,
+                OrderId = orderId,
                 Count = basketDish.Count
             }
         );
+        _context.BasketDishes.RemoveRange(basketDishes);
         _context.SaveChanges();
     }
 
     public void ConfirmOrderDelivery(ClaimsPrincipal principal, Guid orderId)
     {
-        Order? order = _context.OrderDishes
-            .Where(dish => dish.UserId == ClaimsUtils.getId(principal) && dish.OrderId == orderId)
-            .Select(dish => dish.Order)
-            .FirstOrDefault();
+        Order? order = _context.Orders.Find(orderId);
 
         if (order == null)
         {
             throw new OrderNotFoundException();
         }
-
+        
+        if (order.UserId != ClaimsUtils.getId(principal))
+        {
+            throw new ForbiddenException();
+        }
+        
         if (order.Status == OrderStatus.Delivered)
         {
             throw new OrderConfirmedException();

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FoodDelivery.Migrations
 {
     [DbContext(typeof(FoodDeliveryContext))]
-    [Migration("20221214090555_Initial")]
+    [Migration("20221214174758_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -118,16 +118,18 @@ namespace FoodDelivery.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Orders");
                 });
 
             modelBuilder.Entity("FoodDelivery.Models.Entity.OrderDish", b =>
                 {
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("DishId")
                         .HasColumnType("uuid");
 
@@ -137,9 +139,7 @@ namespace FoodDelivery.Migrations
                     b.Property<int>("Count")
                         .HasColumnType("integer");
 
-                    b.HasKey("UserId", "DishId", "OrderId");
-
-                    b.HasIndex("DishId");
+                    b.HasKey("DishId", "OrderId");
 
                     b.HasIndex("OrderId");
 
@@ -222,6 +222,17 @@ namespace FoodDelivery.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("FoodDelivery.Models.Entity.Order", b =>
+                {
+                    b.HasOne("FoodDelivery.Models.Entity.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("FoodDelivery.Models.Entity.OrderDish", b =>
                 {
                     b.HasOne("FoodDelivery.Models.Entity.Dish", "Dish")
@@ -236,17 +247,9 @@ namespace FoodDelivery.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("FoodDelivery.Models.Entity.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Dish");
 
                     b.Navigation("Order");
-
-                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

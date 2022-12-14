@@ -7,6 +7,12 @@ public class Order
     [Key]
     public Guid Id { get; set; }
     
+    public Guid UserId { get; set; }
+
+    public User User { get; set; }
+
+    public List<OrderDish> OrderDishes { get; set; }
+
     public DateTime DeliveryTime { get; set; }
     
     public DateTime OrderTime { get; set; }

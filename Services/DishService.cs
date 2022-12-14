@@ -119,9 +119,12 @@ public class DishService : IDishService
         {
             throw new DishNotFoundException();
         }
-        
-        return _context.OrderDishes
-           .Any(dish => dish.UserId == ClaimsUtils.getId(principal) && dish.DishId == dishId);
+
+        return (from order in _context.Orders
+                join dish in _context.OrderDishes on order.Id equals dish.OrderId
+                where order.UserId == ClaimsUtils.getId(principal) && dish.DishId == dishId
+                select 1
+            ).Any();
     }
     
     public void SetRating(ClaimsPrincipal principal, Guid dishId, int rating)
