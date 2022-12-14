@@ -20,7 +20,7 @@ public class BasketController : ControllerBase
     /// Получить корзину пользователя
     /// </summary>
     [HttpGet, Authorize]
-    public ActionResult<DishBasketDto> GetBasket()
+    public ActionResult<List<DishBasketDto>> GetBasket()
     {
         return _basketService.GetBasket(User);
     }

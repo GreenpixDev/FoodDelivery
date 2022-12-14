@@ -6,7 +6,6 @@ using FoodDelivery.Models.Dto;
 using FoodDelivery.Models.Entity;
 using FoodDelivery.Utils;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace FoodDelivery.Services;
 
@@ -21,81 +20,122 @@ public class OrderService : IOrderService
 
     public OrderDto GetOrderInfo(ClaimsPrincipal principal, Guid orderId)
     {
-        var result = (
-            from basketDish in _context.BasketDishes
-            where basketDish.OrderId == orderId && basketDish.UserId == ClaimsUtils.getId(principal)
-            select basketDish
-        );
+        List<OrderDish> orderDishes = _context.OrderDishes
+            .Where(dish => dish.UserId == ClaimsUtils.getId(principal) && dish.OrderId == orderId)
+            .Select(dish => dish)
+            .Include(nameof(Order))
+            .Include(nameof(Dish))
+            .ToList();
 
-        throw new NotImplementedException(); // TODO
+        if (!orderDishes.Any())
+        {
+            // TODO not found
+            throw new NotFoundException();
+        }
+
+        Order order = orderDishes.First().Order;
+
+        return new OrderDto
+        {
+            Id = order.Id,
+            DeliveryTime = order.DeliveryTime,
+            OrderTime = order.OrderTime,
+            Address = order.Address,
+            Price = order.Price,
+            Status = order.Status,
+            Dishes = (from dish in orderDishes
+                select new DishBasketDto
+                {
+                    Id = dish.Dish.Id,
+                    Name = dish.Dish.Name,
+                    Price = dish.Dish.Price,
+                    TotalPrice = dish.Count * dish.Dish.Price,
+                    Amount = dish.Count,
+                    Image = dish.Dish.Image
+                }).ToList()
+        };
     }
 
     public List<OrderInfoDto> GetOrderList(ClaimsPrincipal principal)
     {
-        var result = (
-            from basketDish in _context.BasketDishes
-            where basketDish.UserId == ClaimsUtils.getId(principal)
-            select basketDish
-        );
-        
-        throw new NotImplementedException(); // TODO
+        List<Order> orders = _context.OrderDishes
+            .Where(dish => dish.UserId == ClaimsUtils.getId(principal))
+            .Select(dish => dish.Order)
+            .Distinct()
+            .ToList();
+
+        return (from order in orders
+            select new OrderInfoDto
+            {
+                Id = order.Id,
+                DeliveryTime = order.DeliveryTime,
+                OrderTime = order.OrderTime,
+                Status = order.Status,
+                Price = order.Price
+            }).ToList();
     }
 
     public void CreateOrderFromBasket(ClaimsPrincipal principal, OrderCreateDto orderCreateDto)
     {
-        var result = (
-            from basketDish in _context.BasketDishes
-            where basketDish.OrderId == null && basketDish.UserId == ClaimsUtils.getId(principal)
-            select basketDish
-        );
+        List<BasketDish> basketDishes = _context.BasketDishes
+            .Where(basketDish => basketDish.UserId == ClaimsUtils.getId(principal))
+            .Select(basketDish => basketDish)
+            .Include(nameof(Dish))
+            .ToList();
 
-        var price = result.Sum(basketDish => basketDish.Count * basketDish.Dish.Price);
-
+        if (!basketDishes.Any())
+        {
+            // TODO пустая корзина
+            throw new NotImplementedException();
+        }
+        
+        double price = basketDishes.Sum(basketDish => basketDish.Count * basketDish.Dish.Price);
         Order order = new Order
         {
-            OrderTime = DateTime.Now,
+            Id = Guid.NewGuid(),
+            OrderTime = DateTime.UtcNow,
             DeliveryTime = orderCreateDto.DeliveryTime,
             Address = orderCreateDto.Address,
             Price = price,
             Status = OrderStatus.InProcess
         };
-
         _context.Orders.Add(order);
-        foreach (var basketDish in result)
-        {
-            basketDish.Order = order;
-        }
-
-        try
-        {
-            _context.SaveChanges();
-        }
-        catch (DbUpdateException e)
-        {
-            if (PostgresUtils.HasErrorCode(e, PostgresErrorCodes.UniqueViolation))
+        _context.BasketDishes.RemoveRange(basketDishes);
+        _context.OrderDishes.AddRange(
+            from basketDish in basketDishes
+            select new OrderDish
             {
-                // TODO
+                DishId = basketDish.DishId,
+                UserId = basketDish.UserId,
+                OrderId = order.Id,
+                Count = basketDish.Count
             }
-            
-            if (PostgresUtils.HasErrorCode(e, PostgresErrorCodes.ForeignKeyViolation))
-            {
-                throw new NotFoundException();
-            }
-
-            throw;
-        }
+        );
+        _context.SaveChanges();
     }
 
     public void ConfirmOrderDelivery(ClaimsPrincipal principal, Guid orderId)
     {
-        var order = new Order
-        {
-            Id = orderId
-        };
+        Order? order = _context.OrderDishes
+            .Where(dish => dish.UserId == ClaimsUtils.getId(principal) && dish.OrderId == orderId)
+            .Select(dish => dish.Order)
+            .FirstOrDefault();
 
-        _context.Attach(order);
+        if (order == null)
+        {
+            // TODO
+            throw new NotFoundException();
+        }
+
+        if (order.Status == OrderStatus.Delivered)
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+            
         order.Status = OrderStatus.Delivered;
 
+        _context.Update(order);
         _context.SaveChanges();
     }
 }

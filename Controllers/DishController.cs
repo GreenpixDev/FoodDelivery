@@ -1,4 +1,5 @@
-﻿using FoodDelivery.Models;
+﻿using FoodDelivery.Exception;
+using FoodDelivery.Models;
 using FoodDelivery.Models.Dto;
 using FoodDelivery.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -29,7 +30,18 @@ public class DishController : ControllerBase
         DishSorting? sorting = null,
         int page = 1)
     {
-        return _dishService.GetDishPage(categories, vegetarian, sorting, page);
+        try
+        {
+            return _dishService.GetDishPage(categories, vegetarian, sorting, page);
+        }
+        catch (PageNotFoundException)
+        {
+            return BadRequest(new 
+            {
+                Status = "Error",
+                Message = "Invalid value for attribute page"
+            });
+        }
     }
     
     /// <summary>
@@ -39,7 +51,18 @@ public class DishController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public ActionResult<DishDto> GetDishById(Guid id)
     {
-        return _dishService.GetDishInfo(id);
+        try
+        {
+            return _dishService.GetDishInfo(id);
+        }
+        catch (NotFoundException)
+        {
+            return NotFound(new 
+            {
+                Status = "Error",
+                Message = $"Dish with id={id} don't in database"
+            });
+        }
     }
     
     /// <summary>

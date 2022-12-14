@@ -23,15 +23,56 @@ public class DishService : IDishService
 
     public DishPagesListDto GetDishPage(IList<DishCategory> categories, bool vegetarian, DishSorting? sorting, int page)
     {
-        IEnumerable<Dish> result = (from dish in _context.Dishes
-            where dish.Vegetarian == vegetarian && categories.Contains(dish.Category)
-            orderby dish.Name
-            // TODO offset
-            select dish).Take(PageSize);
+        IQueryable<Dish> query = _context.Dishes;
+
+        if (vegetarian)
+        {
+            query = query.Where(dish => dish.Vegetarian == true);
+        }
+
+        if (categories.Any())
+        {
+            query = query.Where(dish => categories.Contains(dish.Category));
+        }
+
+        if (sorting != null)
+        {
+            switch (sorting)
+            {
+                case DishSorting.NameAsc:
+                    query = query.OrderBy(dish => dish.Name);
+                    break;
+                case DishSorting.NameDesc:
+                    query = query.OrderByDescending(dish => dish.Name);
+                    break;
+                case DishSorting.PriceAsc:
+                    query = query.OrderBy(dish => dish.Price);
+                    break;
+                case DishSorting.PriceDesc:
+                    query = query.OrderByDescending(dish => dish.Price);
+                    break;
+                case DishSorting.RatingAsc:
+                    query = query.OrderBy(dish => dish.Rating);
+                    break;
+                case DishSorting.RatingDesc:
+                    query = query.OrderByDescending(dish => dish.Rating);
+                    break;
+            }
+        }
+        
+        int totalDishesCount = query.Count();
+        int pageCount = (int) Math.Ceiling(totalDishesCount / (decimal) PageSize);
+
+        if (page > pageCount)
+        {
+            throw new PageNotFoundException();
+        }
+        
+        List<Dish> dishes = query.Skip(PageSize * (page - 1)).Take(PageSize).ToList();
 
         return new DishPagesListDto
         {
-            Dishes = (from dish in result
+            Dishes = (from dish in dishes
                 select new DishDto
                 {
                     Id = dish.Id,
@@ -45,9 +86,9 @@ public class DishService : IDishService
                 }).ToList(),
             Pagination = new PageInfoModel
             {
-                Size = PageSize,
-                Count = 1, // TODO
-                Current = 1 // TODO
+                Size = dishes.Count,
+                Count = pageCount,
+                Current = page
             }
         };
     }
@@ -80,7 +121,8 @@ public class DishService : IDishService
 
     public bool CanSetRating(ClaimsPrincipal principal, Guid dishId)
     {
-        throw new NotImplementedException();
+       return _context.OrderDishes
+           .Any(dish => dish.UserId == ClaimsUtils.getId(principal) && dish.DishId == dishId);
     }
 
     public void SetRating(ClaimsPrincipal principal, Guid dishId, int rating)
@@ -88,26 +130,34 @@ public class DishService : IDishService
         if (!CanSetRating(principal, dishId))
         {
             // TODO throw
+            throw new NotImplementedException();
         }
 
-        _context.DishRatings.Add(new DishRating
+        DishRating? dishRating = _context.DishRatings
+            .Where(rating => rating.UserId == ClaimsUtils.getId(principal) && rating.DishId == dishId)
+            .Select(rating => rating)
+            .SingleOrDefault();
+
+        if (dishRating == null)
         {
-            UserId = ClaimsUtils.getId(principal),
-            DishId = dishId,
-            Rating = rating
-        });
-        
+            dishRating = new DishRating();
+            dishRating.UserId = ClaimsUtils.getId(principal);
+            dishRating.DishId = dishId;
+            dishRating.Rating = rating;
+            _context.DishRatings.Add(dishRating);
+        }
+        else
+        {
+            dishRating.Rating = rating;
+            _context.DishRatings.Update(dishRating);
+        }
+
         try
         {
             _context.SaveChanges();
         }
         catch (DbUpdateException e)
         {
-            if (PostgresUtils.HasErrorCode(e, PostgresErrorCodes.UniqueViolation))
-            {
-                // TODO
-            }
-            
             if (PostgresUtils.HasErrorCode(e, PostgresErrorCodes.ForeignKeyViolation))
             {
                 throw new NotFoundException();
@@ -115,5 +165,16 @@ public class DishService : IDishService
 
             throw;
         }
+        
+        double newRating = _context.DishRatings
+            .Where(rating => rating.DishId == dishId)
+            .Select(rating => rating.Rating)
+            .ToList()
+            .Average();
+
+        Dish dish = new Dish {Id = dishId};
+        _context.Dishes.Attach(dish);
+        dish.Rating = newRating;
+        _context.SaveChanges();
     }
 }

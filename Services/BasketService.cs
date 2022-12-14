@@ -20,13 +20,13 @@ public class BasketService : IBasketService
 
     public List<DishBasketDto> GetBasket(ClaimsPrincipal principal)
     {
-        var result = (
-            from basketDish in _context.BasketDishes
-            where basketDish.OrderId == null && basketDish.UserId == ClaimsUtils.getId(principal)
-            select basketDish
-        );
+        List<BasketDish> basketDishes = _context.BasketDishes
+            .Where(basketDish => basketDish.UserId == ClaimsUtils.getId(principal))
+            .Select(basketDish => basketDish)
+            .Include(nameof(Dish))
+            .ToList();
 
-        return (from basketDish in result
+        return (from basketDish in basketDishes
                 select new DishBasketDto
                 {
                     Id = basketDish.Dish.Id,
@@ -40,27 +40,33 @@ public class BasketService : IBasketService
 
     public void AddDishToBasket(ClaimsPrincipal principal, Guid dishId)
     {
-        BasketDish basketDish = new BasketDish
+        BasketDish? basketDish = _context.BasketDishes
+            .Where(basketDish => basketDish.UserId == ClaimsUtils.getId(principal) && basketDish.DishId == dishId)
+            .Select(basketDish => basketDish)
+            .SingleOrDefault();
+
+        if (basketDish == null)
         {
-            UserId = ClaimsUtils.getId(principal),
-            DishId = dishId,
-            OrderId = null
-        };
-        
-        _context.BasketDishes.Attach(basketDish);
-        basketDish.Count++;
-        
+            basketDish = new BasketDish
+            {
+                UserId = ClaimsUtils.getId(principal),
+                DishId = dishId,
+                Count = 1
+            };   
+            _context.BasketDishes.Add(basketDish);
+        }
+        else
+        {
+            basketDish.Count++;
+            _context.BasketDishes.Update(basketDish);
+        }
+
         try
         {
             _context.SaveChanges();
         }
         catch (DbUpdateException e)
         {
-            if (PostgresUtils.HasErrorCode(e, PostgresErrorCodes.UniqueViolation))
-            {
-                // TODO
-            }
-            
             if (PostgresUtils.HasErrorCode(e, PostgresErrorCodes.ForeignKeyViolation))
             {
                 throw new NotFoundException();
@@ -72,47 +78,41 @@ public class BasketService : IBasketService
 
     public void DecreaseDishFromBasket(ClaimsPrincipal principal, Guid dishId)
     {
-        BasketDish basketDish = new BasketDish
-        {
-            UserId = ClaimsUtils.getId(principal),
-            DishId = dishId,
-            OrderId = null
-        };
+        BasketDish? basketDish = _context.BasketDishes
+            .Where(basketDish => basketDish.UserId == ClaimsUtils.getId(principal) && basketDish.DishId == dishId)
+            .Select(basketDish => basketDish)
+            .SingleOrDefault();
         
-        _context.BasketDishes.Attach(basketDish);
+        if (basketDish == null)
+        {
+            throw new NotFoundException();
+        }
+        
         basketDish.Count--;
-        
-        try
+        if (basketDish.Count == 0)
         {
-            _context.SaveChanges();
+            _context.BasketDishes.Remove(basketDish);
         }
-        catch (DbUpdateException e)
+        else
         {
-            if (PostgresUtils.HasErrorCode(e, PostgresErrorCodes.UniqueViolation))
-            {
-                // TODO
-            }
-            
-            if (PostgresUtils.HasErrorCode(e, PostgresErrorCodes.ForeignKeyViolation))
-            {
-                throw new NotFoundException();
-            }
-
-            throw;
+            _context.BasketDishes.Update(basketDish);   
         }
+        _context.SaveChanges();
     }
 
     public void RemoveDishFromBasketCompletely(ClaimsPrincipal principal, Guid dishId)
     {
-        BasketDish basketDish = new BasketDish
+        BasketDish? basketDish = _context.BasketDishes
+            .Where(basketDish => basketDish.UserId == ClaimsUtils.getId(principal) && basketDish.DishId == dishId)
+            .Select(basketDish => basketDish)
+            .SingleOrDefault();
+        
+        if (basketDish == null)
         {
-            UserId = ClaimsUtils.getId(principal),
-            DishId = dishId,
-            OrderId = null
-        };
-        
+            throw new NotFoundException();
+        }
+
         _context.BasketDishes.Remove(basketDish);
-        
         _context.SaveChanges();
     }
 }
