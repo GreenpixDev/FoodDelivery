@@ -29,8 +29,7 @@ public class OrderService : IOrderService
 
         if (!orderDishes.Any())
         {
-            // TODO not found
-            throw new NotFoundException();
+            throw new OrderNotFoundException();
         }
 
         Order order = orderDishes.First().Order;
@@ -85,8 +84,7 @@ public class OrderService : IOrderService
 
         if (!basketDishes.Any())
         {
-            // TODO пустая корзина
-            throw new NotImplementedException();
+            throw new EmptyBasketException { UserId = ClaimsUtils.getId(principal) };
         }
         
         double price = basketDishes.Sum(basketDish => basketDish.Count * basketDish.Dish.Price);
@@ -123,14 +121,12 @@ public class OrderService : IOrderService
 
         if (order == null)
         {
-            // TODO
-            throw new NotFoundException();
+            throw new OrderNotFoundException();
         }
 
         if (order.Status == OrderStatus.Delivered)
         {
-            // TODO
-            throw new NotImplementedException();
+            throw new OrderConfirmedException();
         }
             
         order.Status = OrderStatus.Delivered;

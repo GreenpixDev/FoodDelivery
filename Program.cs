@@ -67,6 +67,8 @@ builder.Services.AddSwaggerGen(options =>
 var connection = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<FoodDeliveryContext>(options => options.UseNpgsql(connection));
 
+builder.Services.AddDistributedMemoryCache();
+
 // Настройка правил регистрации
 /*builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<FoodDeliveryContext>()

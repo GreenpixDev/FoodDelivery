@@ -1,4 +1,5 @@
-﻿using FoodDelivery.Exception;
+﻿using System.ComponentModel.DataAnnotations;
+using FoodDelivery.Exception;
 using FoodDelivery.Models;
 using FoodDelivery.Models.Dto;
 using FoodDelivery.Services;
@@ -38,7 +39,6 @@ public class DishController : ControllerBase
         {
             return BadRequest(new 
             {
-                Status = "Error",
                 Message = "Invalid value for attribute page"
             });
         }
@@ -55,11 +55,10 @@ public class DishController : ControllerBase
         {
             return _dishService.GetDishInfo(id);
         }
-        catch (NotFoundException)
+        catch (DishNotFoundException)
         {
             return NotFound(new 
             {
-                Status = "Error",
                 Message = $"Dish with id={id} don't in database"
             });
         }
@@ -72,7 +71,17 @@ public class DishController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public ActionResult<bool> CheckCanSetRating(Guid id)
     {
-        return _dishService.CanSetRating(User, id);
+        try
+        {
+            return _dishService.CanSetRating(User, id);
+        }
+        catch (DishNotFoundException)
+        {
+            return NotFound(new 
+            {
+                Message = $"Dish with id={id} don't in database"
+            });
+        }
     }
     
     /// <summary>
@@ -81,9 +90,28 @@ public class DishController : ControllerBase
     [HttpPost("{id:guid}/rating"), Authorize]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-    public IActionResult SetRating(Guid id, int ratingScore)
+    public IActionResult SetRating(
+        Guid id, 
+        [Range(1, 10)] int ratingScore)
     {
-        _dishService.SetRating(User, id, ratingScore);
-        return Ok();
+        try
+        {
+            _dishService.SetRating(User, id, ratingScore);
+            return Ok();
+        }
+        catch (DishNotFoundException)
+        {
+            return NotFound(new 
+            {
+                Message = $"Dish with id={id} don't in database"
+            });
+        }
+        catch (DishNotOrderedException)
+        {
+            return BadRequest(new 
+            {
+                Message = "User can't set rating on dish that wasn't ordered"
+            });
+        }
     }
 }

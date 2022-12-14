@@ -5,7 +5,6 @@ using FoodDelivery.Models.Dto;
 using FoodDelivery.Models.Entity;
 using FoodDelivery.Utils;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace FoodDelivery.Services;
 
@@ -40,10 +39,13 @@ public class BasketService : IBasketService
 
     public void AddDishToBasket(ClaimsPrincipal principal, Guid dishId)
     {
+        if (!_context.Dishes.Any(dish => dish.Id == dishId))
+        {
+            throw new DishNotFoundException();
+        }
+
         BasketDish? basketDish = _context.BasketDishes
-            .Where(basketDish => basketDish.UserId == ClaimsUtils.getId(principal) && basketDish.DishId == dishId)
-            .Select(basketDish => basketDish)
-            .SingleOrDefault();
+            .Find(ClaimsUtils.getId(principal), dishId);
 
         if (basketDish == null)
         {
@@ -60,32 +62,17 @@ public class BasketService : IBasketService
             basketDish.Count++;
             _context.BasketDishes.Update(basketDish);
         }
-
-        try
-        {
-            _context.SaveChanges();
-        }
-        catch (DbUpdateException e)
-        {
-            if (PostgresUtils.HasErrorCode(e, PostgresErrorCodes.ForeignKeyViolation))
-            {
-                throw new NotFoundException();
-            }
-
-            throw;
-        }
+        _context.SaveChanges();
     }
 
     public void DecreaseDishFromBasket(ClaimsPrincipal principal, Guid dishId)
     {
         BasketDish? basketDish = _context.BasketDishes
-            .Where(basketDish => basketDish.UserId == ClaimsUtils.getId(principal) && basketDish.DishId == dishId)
-            .Select(basketDish => basketDish)
-            .SingleOrDefault();
+            .Find(ClaimsUtils.getId(principal), dishId);
         
         if (basketDish == null)
         {
-            throw new NotFoundException();
+            throw new DishNotFoundException();
         }
         
         basketDish.Count--;
@@ -103,13 +90,11 @@ public class BasketService : IBasketService
     public void RemoveDishFromBasketCompletely(ClaimsPrincipal principal, Guid dishId)
     {
         BasketDish? basketDish = _context.BasketDishes
-            .Where(basketDish => basketDish.UserId == ClaimsUtils.getId(principal) && basketDish.DishId == dishId)
-            .Select(basketDish => basketDish)
-            .SingleOrDefault();
+            .Find(ClaimsUtils.getId(principal), dishId);
         
         if (basketDish == null)
         {
-            throw new NotFoundException();
+            throw new DishNotFoundException();
         }
 
         _context.BasketDishes.Remove(basketDish);

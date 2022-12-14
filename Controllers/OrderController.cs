@@ -1,4 +1,5 @@
-﻿using FoodDelivery.Models.Dto;
+﻿using FoodDelivery.Exception;
+using FoodDelivery.Models.Dto;
 using FoodDelivery.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,7 +24,17 @@ public class OrderController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public ActionResult<OrderDto> GetOrderInfo(Guid id)
     {
-        return _orderService.GetOrderInfo(User, id);
+        try
+        {
+            return _orderService.GetOrderInfo(User, id);
+        }
+        catch (OrderNotFoundException)
+        {
+            return NotFound(new
+            {
+                Message = $"Order with id={id} don't in database"
+            });
+        }
     }
     
     /// <summary>
@@ -43,8 +54,25 @@ public class OrderController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     public IActionResult CreateOrderFromBasket(OrderCreateDto orderCreateDto)
     {
-        _orderService.CreateOrderFromBasket(User, orderCreateDto);
-        return Ok();
+        if ((orderCreateDto.DeliveryTime - DateTime.Now).TotalMinutes < 60)
+        {
+            return BadRequest(new
+            {
+                Message = "Invalid delivery time. Delivery time must be more than current datetime on 60 minutes"
+            });
+        }
+        try
+        {
+            _orderService.CreateOrderFromBasket(User, orderCreateDto);
+            return Ok();
+        }
+        catch (EmptyBasketException e)
+        {
+            return BadRequest(new
+            {
+                Message = $"Empty basket for user with id={e.UserId}"
+            });
+        }
     }
     
     /// <summary>
@@ -55,7 +83,24 @@ public class OrderController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public IActionResult ConfirmOrderDelivery(Guid id)
     {
-        _orderService.ConfirmOrderDelivery(User, id);
-        return Ok();
+        try
+        {
+            _orderService.ConfirmOrderDelivery(User, id);
+            return Ok();
+        }
+        catch (OrderNotFoundException)
+        {
+            return NotFound(new
+            {
+                Message = $"Order with id={id} don't in database"
+            });
+        }
+        catch (OrderConfirmedException)
+        {
+            return BadRequest(new
+            {
+                Message = $"Can't update status for order with id={id}"
+            });
+        }
     }
 }

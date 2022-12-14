@@ -5,8 +5,6 @@ using FoodDelivery.Models;
 using FoodDelivery.Models.Dto;
 using FoodDelivery.Models.Entity;
 using FoodDelivery.Utils;
-using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace FoodDelivery.Services;
 
@@ -95,15 +93,11 @@ public class DishService : IDishService
 
     public DishDto GetDishInfo(Guid dishId)
     {
-        Dish? result = (
-            from dish in _context.Dishes
-            where dish.Id == dishId
-            select dish
-        ).SingleOrDefault();
+        Dish? result = _context.Dishes.Find(dishId);
 
         if (result == null)
         {
-            throw new NotFoundException();
+            throw new DishNotFoundException();
         }
         
         return new DishDto
@@ -121,50 +115,40 @@ public class DishService : IDishService
 
     public bool CanSetRating(ClaimsPrincipal principal, Guid dishId)
     {
-       return _context.OrderDishes
+        if (!_context.Dishes.Any(dish => dish.Id == dishId))
+        {
+            throw new DishNotFoundException();
+        }
+        
+        return _context.OrderDishes
            .Any(dish => dish.UserId == ClaimsUtils.getId(principal) && dish.DishId == dishId);
     }
-
+    
     public void SetRating(ClaimsPrincipal principal, Guid dishId, int rating)
     {
         if (!CanSetRating(principal, dishId))
         {
-            // TODO throw
-            throw new NotImplementedException();
+            throw new DishNotOrderedException();
         }
 
         DishRating? dishRating = _context.DishRatings
-            .Where(rating => rating.UserId == ClaimsUtils.getId(principal) && rating.DishId == dishId)
-            .Select(rating => rating)
-            .SingleOrDefault();
+            .Find(ClaimsUtils.getId(principal), dishId);
 
         if (dishRating == null)
         {
-            dishRating = new DishRating();
-            dishRating.UserId = ClaimsUtils.getId(principal);
-            dishRating.DishId = dishId;
-            dishRating.Rating = rating;
-            _context.DishRatings.Add(dishRating);
+            _context.DishRatings.Add(new DishRating
+            {
+                UserId = ClaimsUtils.getId(principal),
+                DishId = dishId,
+                Rating = rating
+            });
         }
         else
         {
             dishRating.Rating = rating;
             _context.DishRatings.Update(dishRating);
         }
-
-        try
-        {
-            _context.SaveChanges();
-        }
-        catch (DbUpdateException e)
-        {
-            if (PostgresUtils.HasErrorCode(e, PostgresErrorCodes.ForeignKeyViolation))
-            {
-                throw new NotFoundException();
-            }
-
-            throw;
-        }
+        _context.SaveChanges();
         
         double newRating = _context.DishRatings
             .Where(rating => rating.DishId == dishId)

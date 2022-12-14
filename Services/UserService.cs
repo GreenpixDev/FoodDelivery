@@ -6,8 +6,6 @@ using FoodDelivery.Models.Dto;
 using FoodDelivery.Models.Entity;
 using FoodDelivery.Services.Password;
 using FoodDelivery.Utils;
-using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace FoodDelivery.Services;
 
@@ -30,6 +28,11 @@ public class UserService : IUserService
 
     public TokenDto Register(UserRegisterDto userRegisterDto)
     {
+        if (_context.Users.Any(user => user.Email == userRegisterDto.Email))
+        {
+            throw new DuplicateUserException();
+        }
+        
         User user = new User
         {
             Email = userRegisterDto.Email,
@@ -42,19 +45,7 @@ public class UserService : IUserService
         };
         
         _context.Users.Add(user);
-        try
-        {
-            _context.SaveChanges();
-        }
-        catch (DbUpdateException e)
-        {
-            if (PostgresUtils.HasErrorCode(e, PostgresErrorCodes.UniqueViolation))
-            {
-                throw new DuplicateUserException();
-            }
-
-            throw;
-        }
+        _context.SaveChanges();
         
         return new TokenDto
         {
@@ -90,7 +81,7 @@ public class UserService : IUserService
     {
         User result = (
             from user in _context.Users
-            where user.Email == ClaimsUtils.getEmail(principal)
+            where user.Id == ClaimsUtils.getId(principal)
             select user
         ).Single();
 
@@ -110,7 +101,7 @@ public class UserService : IUserService
     {
         User result = (
             from user in _context.Users
-            where user.Email == ClaimsUtils.getEmail(principal)
+            where user.Id == ClaimsUtils.getId(principal)
             select user
         ).Single();
 

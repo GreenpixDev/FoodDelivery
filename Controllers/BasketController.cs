@@ -1,4 +1,5 @@
-﻿using FoodDelivery.Models.Dto;
+﻿using FoodDelivery.Exception;
+using FoodDelivery.Models.Dto;
 using FoodDelivery.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -32,8 +33,18 @@ public class BasketController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public IActionResult AddDish(Guid dishId)
     {
-        _basketService.AddDishToBasket(User, dishId);
-        return Ok();
+        try
+        {
+            _basketService.AddDishToBasket(User, dishId);
+            return Ok();
+        }
+        catch (DishNotFoundException)
+        {
+            return NotFound(new
+            {
+                Message = $"Dish with id={dishId} don't in basket"
+            });
+        }
     }
     
     /// <summary>
@@ -43,14 +54,24 @@ public class BasketController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public IActionResult RemoveDish(Guid dishId, bool increase = false)
     {
-        if (increase)
+        try
         {
-            _basketService.DecreaseDishFromBasket(User, dishId);
+            if (increase)
+            {
+                _basketService.DecreaseDishFromBasket(User, dishId);
+            }
+            else
+            {
+                _basketService.RemoveDishFromBasketCompletely(User, dishId);
+            }
+            return Ok();
         }
-        else
+        catch (DishNotFoundException)
         {
-            _basketService.RemoveDishFromBasketCompletely(User, dishId);
+            return NotFound(new
+            {
+                Message = $"Dish with id={dishId} don't in basket"
+            });
         }
-        return Ok();
     }
 }
