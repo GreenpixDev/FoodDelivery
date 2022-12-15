@@ -1,6 +1,5 @@
 pages:
-  extends:
-    - .deploy-rules
+  extends: .deploy-rules
   stage: deploy
   script:
     - echo "Preparing gitlab pages..."
@@ -11,5 +10,6 @@ pages:
   artifacts:
     paths:
       - public
-  environment: staging
   needs: []
+  tags:
+    - docker
